@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board Election 2025 - Brampton Church</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .candidate-card.selected {
+            border-color: #6366f1;
+            background-color: rgb(99 102 241 / 0.1);
+            box-shadow: 0 0 20px -5px rgb(99 102 241 / 0.4);
+        }
+
+        .bio-collapsed {
+            max-height: 2.8rem;
+            mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+            opacity: 0.6;
+            overflow: hidden;
+        }
+
+        .bio-expanded {
+            max-height: 5000px;
+            opacity: 1;
+            margin-top: 1rem;
+            mask-image: none;
+            -webkit-mask-image: none;
+            overflow: visible;
+        }
+
+        .candidate-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 1.25rem;
+            background-color: #1e293b;
+        }
+
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-200%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Dark Mode Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-[#020617] text-slate-200 p-4 md:p-8 flex flex-col items-center">
+
+    <!-- Toast Notifications -->
+    <div id="toast"
+        class="toast bg-indigo-600 text-white px-6 py-3 rounded-full shadow-2xl font-bold text-sm flex items-center gap-2">
+        <i data-lucide="info" size="18"></i>
+        <span id="toast-msg">Message</span>
+    </div>
+
+    <header class="w-full max-w-3xl text-center mb-16 mt-12">
+        <div class="flex justify-center mb-6">
+            <div class="bg-indigo-600 p-4 rounded-3xl text-white shadow-xl">
+                <i data-lucide="vote" size="40"></i>
+            </div>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">Board Election 2025</h1>
+        <p class="text-indigo-400 font-semibold text-sm uppercase tracking-widest px-4">
+            Church of God Sabbath-Keeping Ministries Brampton
+        </p>
+    </header>
+
+    <main
+        class="w-full max-w-3xl bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-black/50 border border-slate-800 overflow-hidden mb-12">
+
+        <!-- STEP: WELCOME -->
+        <div id="step-welcome" class="step-content active p-8 md:p-12 text-center">
+            <div
+                class="mb-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-300 text-xs font-bold uppercase tracking-wider border border-indigo-500/20">
+                <i data-lucide="calendar" size="14"></i>
+                2025-2027 Term
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold mb-4 text-white">Nominee Review & Voting</h2>
+            <p class="text-slate-400 mb-10 leading-relaxed text-lg">
+                Please review the full biographies of our candidates below. You may select exactly <strong
+                    class="text-indigo-400">three (3)</strong> members for the Church Board.
+            </p>
+            <div class="space-y-4">
+                <button onclick="navigateTo('vote')"
+                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-5 rounded-2xl transition-all shadow-lg shadow-indigo-600/20 text-lg flex items-center justify-center gap-2 group">
+                    Proceed to Nominees
+                    <i data-lucide="arrow-right" size="20" class="group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <button onclick="navigateTo('admin')"
+                    class="w-full py-4 text-sm font-medium text-slate-500 hover:text-indigo-400 transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="lock" size="14"></i>
+                    Administrator Portal
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP: VOTE -->
+        <div id="step-vote" class="step-content p-4 md:p-10">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4 px-2">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">The Nominees</h2>
+                    <p class="text-slate-500 text-sm">Review biographies and select 3 leaders</p>
+                </div>
+                <div id="selection-counter"
+                    class="inline-flex px-4 py-2 rounded-xl text-sm font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 shadow-sm whitespace-nowrap">
+                    0 of 3 Selected
+                </div>
+            </div>
+
+            <div id="candidate-list" class="space-y-6 mb-10">
+                <!-- JS Rendered Candidates -->
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 p-2 bg-slate-950/50 rounded-3xl mt-4 border border-slate-800">
+                <button onclick="navigateTo('welcome')"
+                    class="order-2 md:order-1 flex-1 border-2 border-slate-800 bg-slate-900 hover:bg-slate-800 py-4 rounded-2xl font-bold text-slate-300 transition-all">
+                    Back
+                </button>
+                <button id="submit-btn" onclick="submitBallot()" disabled
+                    class="order-1 md:order-2 flex-[2] py-4 rounded-2xl font-bold text-white transition-all text-lg bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700">
+                    Cast Ballot (0)
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP: SUCCESS -->
+        <div id="step-success" class="step-content p-12 text-center">
+            <div
+                class="w-24 h-24 bg-emerald-500/10 text-emerald-400 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-500/20">
+                <i data-lucide="shield-check" size="56"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold mb-4 text-white">Ballot Cast Successfully</h2>
+            <p class="text-slate-400 mb-10 text-lg">
+                Thank you for contributing to the future of our ministry. Your vote has been recorded securely.
+            </p>
+            <button onclick="resetAndHome()"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 px-12 rounded-2xl transition-colors shadow-xl shadow-indigo-600/20">
+                Return to Home
+            </button>
+        </div>
+
+        <!-- STEP: ADMIN -->
+        <div id="step-admin" class="step-content p-8 md:p-12">
+            <div class="flex justify-between items-center mb-12">
+                <button onclick="navigateTo('welcome')"
+                    class="flex items-center gap-2 text-slate-500 hover:text-indigo-400 font-bold transition-all group">
+                    <i data-lucide="chevron-left" size="20" class="group-hover:-translate-x-1 transition-transform"></i>
+                    Back
+                </button>
+                <div class="text-xs font-black text-slate-600 uppercase tracking-[0.3em]">Administrator Area</div>
+            </div>
+
+            <div id="admin-login">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-extrabold text-white">Secure Access</h2>
+                    <p class="text-slate-500 mt-2">Enter authority key to view results</p>
+                </div>
+                <div class="max-w-xs mx-auto">
+                    <input id="admin-key-input" type="password" placeholder="••••••••"
+                        class="w-full p-5 bg-slate-950 border-2 border-slate-800 rounded-2xl mb-6 text-center text-2xl font-mono tracking-widest text-white focus:border-indigo-500 focus:bg-slate-900 outline-none transition-all shadow-inner">
+                    <button onclick="authenticateAdmin()"
+                        class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20">
+                        Unlock Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <div id="admin-dashboard" class="hidden">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Live Standings</h2>
+                        <p id="total-votes-label" class="text-indigo-400 text-sm font-semibold">0 Total Votes Cast</p>
+                    </div>
+                    <button onclick="logoutAdmin()"
+                        class="flex items-center gap-2 text-red-400 font-bold hover:bg-red-500/10 px-4 py-2 rounded-xl transition-colors">
+                        <i data-lucide="log-out" size="18"></i>
+                        Logout
+                    </button>
+                </div>
+                <div id="results-container" class="space-y-6 mb-12">
+                    <!-- Results Rendered via JS -->
+                </div>
+
+                <div class="pt-8 border-t border-slate-800">
+                    <div class="bg-red-500/5 p-6 rounded-3xl border border-red-500/20">
+                        <div class="flex items-center gap-3 text-red-400 font-bold mb-2">
+                            <i data-lucide="alert-triangle" size="20"></i>
+                            Danger Zone
+                        </div>
+                        <p class="text-red-400/60 text-sm mb-4">Resetting the election data will clear all stored votes.
+                            This action cannot be undone.</p>
+                        <button onclick="confirmReset()"
+                            class="w-full py-4 text-red-400 font-bold bg-slate-950 border border-red-500/20 hover:bg-red-500/10 rounded-2xl transition-colors">
+                            Clear All Election Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="py-10 border-t border-slate-800/50 text-center flex flex-col items-center">
+            <div class="flex gap-4 mb-4 text-slate-700">
+                <i data-lucide="heart" size="16"></i>
+                <i data-lucide="book-open" size="16"></i>
+                <i data-lucide="anchor" size="16"></i>
+            </div>
+            <p class="text-slate-500 text-sm font-semibold">&copy; 2025 Brampton Sabbath Keeping Ministries</p>
+            <p class="mt-1 text-slate-600 text-xs italic tracking-wide">Grace, Truth, and Community.</p>
+        </footer>
+    </main>
+
+    <script>
+        const ADMIN_KEY = "CHURCH2025";
+
+        const CANDIDATES = [
+            { id: "rose-andrew", name: "Andrew Rose", image: "Images/Rose.jpeg", bio: "My name is Andrew Rose I enjoy reading, which helps me to grow spiritually and intellectually. I am passionate about sports especially track and field and soccer. I enjoy spending quality time with my family. I have been married for more than thirty years to my beautiful wife Brenda Rose and am a proud father of six children Quenton, Andrew Jr, Elijah, Jadon, Jalon and Ebony and my granddaughter Kehlani. My family has supported every step of my ministry journey, and I work every day to live a life of faith and integrity always seeking to contribute positively to those that are around me.\n\nFor twenty-five years I have been baptized in the 7th day church of God. I have had the privilege to be part of the Brampton Sabbath Keeping Ministries over the past 6 years. I currently serve as the Men’s Vice President..." },
+            { id: "nichol-obrian", name: "O’Brian W. Nichol", image: "Images/OB.jpeg", bio: "I was born in North York, Ontario, and raised by my parents, Deacon Edward Nichol and Sister Janet Nichol. From an early age, church has been a central part of my life. Music became part of my life very early..." },
+            { id: "thomas-ann-marie", name: "Ann-Marie Thomas", image: "Images/Anne.jpeg", bio: "Ann-Marie Thomas is a Certified Human Resources Professional (CHRP) with academic training in Business Administration and Industrial and Organizational Psychology. Known for her structured and solutions-focused approach, she brings clarity and purpose to every assignment. She is a dedicated servant-leader, having devoted more than 25 years supporting ministries..." },
+            { id: "clarke-ronjay", name: "Ronjay Clarke", image: "Images/Ronjay.jpeg", bio: "Ronjay Clarke is a dedicated and results-oriented professional with experience in leadership, operations management, and community engagement. With years of service in music ministry, he has consistently demonstrated a commitment to creating worship experiences that inspire and uplift congregations..." },
+            { id: "butler-leroy", name: "Leroy Butler", image: "Images/Lee.jpeg", bio: "Leroy Augustus Butler is a Tech Innovator, Trusted Leader, and Purpose-Driven Servant of God who is married to his talented and beautiful wife Wendy for over 10 years. Known as the “I know a guy” in his circle, his network is a powerful resource for practical solutions..." },
+            { id: "scott-antonette", name: "Antonette Whitley-Scott", image: "Images/Antonette.jpeg", bio: "Antonette Whitley-Scott is a devoted servant of God whose Christian walk spans more than two decades of steadfast commitment. Saved since 1998, she began her journey in the Church of God (Seventh Day) Jamaica Conference..." },
+            { id: "ricketts-chase", name: "Evangelist Chase Ricketts", image: "Images/Chase.jpeg", bio: "Evangelist Chase Ricketts loves the Lord and the Church of God. He gave his life to the Lord over 27 years ago. Professional Career in Jamaica: He served for 10 years up to the rank of Corporal of Police and to the position of Manager of Administration in the Jamaica Constabulary Force (JCF)..." }
+        ];
+
+        let selectedCandidates = [];
+        let votes = JSON.parse(localStorage.getItem('church_votes_v2025_final')) || {};
+        if (Object.keys(votes).length === 0) CANDIDATES.forEach(c => votes[c.id] = 0);
+
+        function navigateTo(stepId) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`step-${stepId}`);
+            if (target) target.classList.add('active');
+
+            if (stepId === 'vote') {
+                renderCandidateList();
+                updateSelectionUI();
+            }
+            if (stepId === 'admin') resetAdminUI();
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            lucide.createIcons();
+        }
+
+        function resetAdminUI() {
+            const loginEl = document.getElementById('admin-login');
+            const dashEl = document.getElementById('admin-dashboard');
+            const inputEl = document.getElementById('admin-key-input');
+            if (loginEl) loginEl.classList.remove('hidden');
+            if (dashEl) dashEl.classList.add('hidden');
+            if (inputEl) inputEl.value = "";
+        }
+
+        function renderCandidateList() {
+            const container = document.getElementById('candidate-list');
+            if (!container) return;
+            container.innerHTML = CANDIDATES.map(candidate => `
+                <div id="card-${candidate.id}" class="candidate-card border-2 rounded-[2rem] p-5 md:p-8 transition-all cursor-pointer bg-slate-900/50 border-slate-800 hover:border-slate-700" onclick="toggleCandidate('${candidate.id}')">
+                    <div class="flex items-start gap-4">
+                        <div id="checkbox-${candidate.id}" class="mt-2 h-7 w-7 rounded-full border-2 border-slate-700 bg-slate-950 flex items-center justify-center transition-all shrink-0">
+                            <i data-lucide="check" class="hidden text-white" size="16"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-4 mb-4">
+                                <img src="${candidate.image}" alt="${candidate.name}" class="candidate-img shadow-xl border-2 border-slate-800">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg md:text-xl text-white leading-tight">${candidate.name}</h3>
+                                    <span class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">Nominee</span>
+                                </div>
+                                <button onclick="toggleBio(event, '${candidate.id}')" class="p-4 rounded-2xl text-slate-500 hover:bg-slate-800 hover:text-indigo-400 transition-all bg-slate-950/50">
+                                    <i data-lucide="chevron-down" size="24"></i>
+                                </button>
+                            </div>
+                            <div id="bio-${candidate.id}" class="bio-collapsed text-slate-400 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
+                                ${candidate.bio}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function toggleBio(event, id) {
+            event.stopPropagation();
+            const bio = document.getElementById(`bio-${id}`);
+            const btn = event.currentTarget;
+            if (!bio) return;
+            if (bio.classList.contains('bio-collapsed')) {
+                bio.classList.replace('bio-collapsed', 'bio-expanded');
+                btn.style.transform = "rotate(180deg)";
+            } else {
+                bio.classList.replace('bio-expanded', 'bio-collapsed');
+                btn.style.transform = "rotate(0deg)";
+            }
+        }
+
+        function toggleCandidate(id) {
+            const index = selectedCandidates.indexOf(id);
+            if (index > -1) {
+                selectedCandidates.splice(index, 1);
+            } else {
+                if (selectedCandidates.length >= 3) {
+                    showToast("Selection limit reached (3 max)");
+                    return;
+                }
+                selectedCandidates.push(id);
+            }
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            CANDIDATES.forEach(c => {
+                const card = document.getElementById(`card-${c.id}`);
+                const checkbox = document.getElementById(`checkbox-${c.id}`);
+
+                if (card && checkbox) {
+                    const icon = checkbox.querySelector('i');
+                    if (selectedCandidates.includes(c.id)) {
+                        card.classList.add('selected');
+                        checkbox.classList.add('bg-indigo-600', 'border-indigo-600');
+                        checkbox.classList.remove('bg-slate-950', 'border-slate-700');
+                        if (icon) icon.classList.remove('hidden');
+                    } else {
+                        card.classList.remove('selected');
+                        checkbox.classList.remove('bg-indigo-600', 'border-indigo-600');
+                        checkbox.classList.add('bg-slate-950', 'border-slate-700');
+                        if (icon) icon.classList.add('hidden');
+                    }
+                }
+            });
+
+            const counterEl = document.getElementById('selection-counter');
+            const submitBtn = document.getElementById('submit-btn');
+
+            const count = selectedCandidates.length;
+            if (counterEl) counterEl.innerText = `${count} of 3 Selected`;
+
+            if (submitBtn) {
+                submitBtn.innerText = count === 3 ? `Cast Final Ballot` : `Select ${3 - count} more...`;
+                submitBtn.disabled = count !== 3;
+
+                if (count === 3) {
+                    submitBtn.classList.replace('bg-slate-800', 'bg-indigo-600');
+                    submitBtn.classList.remove('text-slate-600', 'cursor-not-allowed');
+                    submitBtn.classList.add('shadow-indigo-600/30');
+                } else {
+                    submitBtn.classList.replace('bg-indigo-600', 'bg-slate-800');
+                    submitBtn.classList.add('text-slate-600', 'cursor-not-allowed');
+                    submitBtn.classList.remove('shadow-indigo-600/30');
+                }
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            const m = document.getElementById('toast-msg');
+            if (t && m) {
+                m.innerText = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 3000);
+            }
+        }
+
+        function submitBallot() {
+            selectedCandidates.forEach(id => {
+                if (votes.hasOwnProperty(id)) votes[id]++;
+            });
+            localStorage.setItem('church_votes_v2025_final', JSON.stringify(votes));
+            navigateTo('success');
+        }
+
+        function resetAndHome() {
+            selectedCandidates = [];
+            navigateTo('welcome');
+        }
+
+        function authenticateAdmin() {
+            const inputEl = document.getElementById('admin-key-input');
+            const input = inputEl ? inputEl.value : "";
+            if (input === ADMIN_KEY) {
+                const loginEl = document.getElementById('admin-login');
+                const dashEl = document.getElementById('admin-dashboard');
+                if (loginEl) loginEl.classList.add('hidden');
+                if (dashEl) dashEl.classList.remove('hidden');
+                renderResults();
+                lucide.createIcons();
+            } else {
+                showToast("Invalid Authorization Key");
+            }
+        }
+
+        function logoutAdmin() {
+            resetAdminUI();
+            navigateTo('welcome');
+        }
+
+        function renderResults() {
+            const container = document.getElementById('results-container');
+            const totalVotesLabel = document.getElementById('total-votes-label');
+            if (!container) return;
+
+            const sortedVotes = CANDIDATES.map(c => ({ ...c, count: votes[c.id] }))
+                .sort((a, b) => b.count - a.count);
+
+            const total = Object.values(votes).reduce((a, b) => a + b, 0);
+            if (totalVotesLabel) totalVotesLabel.innerText = `${total} Individual Votes Counted`;
+
+            container.innerHTML = sortedVotes.map((c, index) => {
+                const percent = total > 0 ? ((c.count / total) * 100).toFixed(1) : 0;
+                return `
+                    <div class="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 hover:border-slate-700 transition-all">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-slate-800 text-[10px] font-bold text-white flex items-center justify-center">${index + 1}</span>
+                                <span class="font-bold text-white">${c.name}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-indigo-400 font-extrabold text-xl">${c.count}</span>
+                                <span class="text-slate-500 text-xs font-bold uppercase ml-1">Votes</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800 shadow-inner">
+                            <div class="bg-indigo-500 h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function confirmReset() {
+            if (confirm("CRITICAL ACTION: Are you sure you want to delete ALL recorded votes? This cannot be undone.")) {
+                CANDIDATES.forEach(c => votes[c.id] = 0);
+                localStorage.setItem('church_votes_v2025_final', JSON.stringify(votes));
+                renderResults();
+                showToast("All data cleared successfully");
+            }
+        }
+        window.onload = () => lucide.createIcons();
+    </script>
+</body>
+
+</html>
