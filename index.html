@@ -88,6 +88,8 @@
         .bio-content li {
             margin-bottom: 0.25rem;
         }
+
+        @media (max-width: 480px) { .bio-content { width: 100% !important; max-width: 100% !important; } }
     </style>
 </head>
 
@@ -415,47 +417,75 @@
         }
 
         function renderCandidates() {
-            const list = document.getElementById('candidates-list');
-            list.innerHTML = CANDIDATES.map(c => {
-                const isSelected = selectedCandidates.has(c.id);
-                const isExpanded = expandedBios.has(c.id);
-                return `
-                    <div class="candidate-card custom-transition border-2 rounded-[2rem] p-5 cursor-pointer relative overflow-hidden ${isSelected ? 'selected' : 'bg-slate-900/50 border-white/5 hover:border-slate-700'}" onclick="toggleSelection('${c.id}')">
-                        <div class="flex items-start gap-4">
-                            <div class="mt-2 w-7 h-7 rounded-full border-2 border-slate-800 flex items-center justify-center custom-transition ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'bg-slate-950'}">
-                                ${isSelected ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                const list = document.getElementById('candidates-list');
+                list.innerHTML = CANDIDATES.map(c => {
+                    const isSelected = selectedCandidates.has(c.id);
+                    const isExpanded = expandedBios.has(c.id);
+
+                    return `
+            <div class="candidate-card custom-transition border-2 rounded-[2rem] p-5 cursor-pointer relative overflow-hidden 
+                ${isSelected ? 'selected' : 'bg-slate-900/50 border-white/5 hover:border-slate-700'}"
+                onclick="toggleSelection('${c.id}')">
+
+                <div class="flex items-start gap-4">
+
+                    <!-- Checkbox -->
+                    <div class="mt-2 w-7 h-7 rounded-full border-2 border-slate-800 flex items-center justify-center custom-transition 
+                        ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'bg-slate-950'}">
+                        ${isSelected ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="flex-1">
+
+                        <div class="flex items-center gap-4">
+
+                            <!-- Avatar -->
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-800 border-2 border-slate-700 overflow-hidden shrink-0">
+                                <img src="${c.image}" class="w-full h-full object-cover"
+                                    onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=1e293b&color=94a3b8'">
                             </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-16 h-16 rounded-2xl bg-slate-800 border-2 border-slate-700 overflow-hidden shrink-0">
-                                        <img src="${c.image}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=1e293b&color=94a3b8'">
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="font-bold text-lg text-white leading-tight truncate">${c.name}</h3>
-                                        <button onclick="event.stopPropagation(); toggleBio('${c.id}')" class="text-indigo-400 text-xs font-bold mt-1 flex items-center gap-1 hover:text-indigo-300">
-                                            ${isExpanded ? 'Hide Bio' : 'Read Biography'} 
-                                            <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-3 h-3"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                ${isExpanded ? `
-                                    <div class="mt-6 text-slate-400 text-sm leading-relaxed p-6 bg-slate-950/60 rounded-3xl border border-white/5 animate-fade-in bio-content">
-                                        ${c.bio}
-                                        <div class="mt-6 flex justify-center">
-                                            <button onclick="event.stopPropagation(); toggleBio('${c.id}')" class="px-5 py-2 rounded-full border border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all">
-                                                Close Bio
-                                            </button>
-                                        </div>
-                                    </div>
-                                ` : ''}
+
+                            <!-- Name + Bio Toggle -->
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-lg text-white leading-tight whitespace-normal sm:truncate">
+                                    ${c.name}
+                                </h3>
+
+                                <button onclick="event.stopPropagation(); toggleBio('${c.id}')"
+                                    class="text-indigo-400 text-xs font-bold mt-1 flex items-center gap-1 hover:text-indigo-300">
+                                    ${isExpanded ? 'Hide Bio' : 'Read Biography'}
+                                    <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-3 h-3"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
-                `;
-            }).join('');
-            lucide.createIcons();
-            updateControls();
-        }
+                </div>
+
+                <!-- BIO SECTION (moved outside flex) -->
+                ${isExpanded ? `
+                    <div class="mt-6 w-full text-slate-400 text-sm leading-relaxed 
+                        px-4 py-6 sm:px-8 sm:py-6 bg-slate-950/60 rounded-3xl 
+                        border border-white/5 animate-fade-in bio-content">
+
+                        ${c.bio}
+
+                        <div class="mt-6 flex justify-center">
+                            <button onclick="event.stopPropagation(); toggleBio('${c.id}')"
+                                class="px-5 py-2 rounded-full border border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all">
+                                Close Bio
+                            </button>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+                }).join('');
+
+                lucide.createIcons();
+                updateControls();
+            }
+
 
         function toggleSelection(id) {
             if (selectedCandidates.has(id)) {
