@@ -89,7 +89,12 @@
             margin-bottom: 0.25rem;
         }
 
-        @media (max-width: 480px) { .bio-content { width: 100% !important; max-width: 100% !important; } }
+        @media (max-width: 480px) {
+            .bio-content {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -126,7 +131,7 @@
         <section id="step-welcome" class="step-container active p-8 md:p-14 text-center">
             <div
                 class="mb-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-300 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
-                <i data-lucide="calendar" class="w-3 h-3"></i> 2025-2027 Term
+                <i data-lucide="calendar" class="w-3 h-3"></i> 2025-2029 Term
             </div>
             <h2 class="text-2xl md:text-3xl font-extrabold mb-4 text-white">Nominee Review & Voting</h2>
             <p class="text-slate-400 mb-10 leading-relaxed text-base md:text-lg max-w-lg mx-auto">
@@ -397,6 +402,16 @@
             }
         ];
 
+        function getVoterHash() {
+            let hash = localStorage.getItem("voter_hash");
+            if (!hash) {
+                hash = crypto.randomUUID();
+                localStorage.setItem("voter_hash", hash);
+            }
+            return hash;
+        }
+
+
         let selectedCandidates = new Set();
         let expandedBios = new Set();
         let isSubmitting = false;
@@ -417,12 +432,12 @@
         }
 
         function renderCandidates() {
-                const list = document.getElementById('candidates-list');
-                list.innerHTML = CANDIDATES.map(c => {
-                    const isSelected = selectedCandidates.has(c.id);
-                    const isExpanded = expandedBios.has(c.id);
+            const list = document.getElementById('candidates-list');
+            list.innerHTML = CANDIDATES.map(c => {
+                const isSelected = selectedCandidates.has(c.id);
+                const isExpanded = expandedBios.has(c.id);
 
-                    return `
+                return `
             <div class="candidate-card custom-transition border-2 rounded-[2rem] p-5 cursor-pointer relative overflow-hidden 
                 ${isSelected ? 'selected' : 'bg-slate-900/50 border-white/5 hover:border-slate-700'}"
                 onclick="toggleSelection('${c.id}')">
@@ -480,11 +495,11 @@
                 ` : ''}
             </div>
         `;
-                }).join('');
+            }).join('');
 
-                lucide.createIcons();
-                updateControls();
-            }
+            lucide.createIcons();
+            updateControls();
+        }
 
 
         function toggleSelection(id) {
@@ -532,13 +547,30 @@
             btn.innerHTML = `<div class="loader w-4 h-4"></div> <span>Submitting...</span>`;
             btn.disabled = true;
 
+            const voterHash = getVoterHash();
+
             try {
-                const votesToInsert = Array.from(selectedCandidates).map(id => ({ [COLUMN_NAME]: id }));
-                const { error } = await supabaseClient.from(TABLE_NAME).insert(votesToInsert);
+                const votesToInsert = Array.from(selectedCandidates).map(id => ({
+                    voter_hash: voterHash,
+                    candidate_id: id
+                }));
 
-                if (error) throw error;
+                const { error } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .insert(votesToInsert);
 
+                if (error) {
+                    if (error.code === "23505") {
+                        showToast("You have already voted.");
+                        navigateTo('success');
+                        return;
+                    }
+                    throw error;
+                }
+
+                localStorage.setItem("has_voted", "true");
                 navigateTo('success');
+
             } catch (err) {
                 console.error(err);
                 showToast("Connection error. Please try again.");
@@ -546,6 +578,7 @@
                 updateControls();
             }
         }
+
 
         // --- Admin Logic ---
         function verifyAdmin() {
@@ -617,7 +650,13 @@
             }
         }
 
-        window.onload = () => lucide.createIcons();
+        window.onload = () => {
+            if (localStorage.getItem("has_voted")) {
+                navigateTo('success');
+            }
+            lucide.createIcons();
+        };
+
     </script>
 </body>
 
